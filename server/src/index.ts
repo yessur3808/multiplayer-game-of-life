@@ -1,22 +1,26 @@
 import { createServer } from "node:http";
+import { WebSocketServer } from "ws";
 
-const server = createServer((request, response) => {
-  if (request.url === "/health") {
-    response.writeHead(200, {
-      "content-type": "application/json",
-    });
+const server = createServer();
 
-    response.end(
-      JSON.stringify({
-        status: "ok",
-      }),
-    );
+const webSocketServer = new WebSocketServer({
+  server,
+  path: "/ws",
+});
 
-    return;
-  }
+webSocketServer.on("connection", (socket) => {
+  console.log("Browser connected");
 
-  response.writeHead(404);
-  response.end("Not found");
+  socket.send(
+    JSON.stringify({
+      type: "welcome",
+      message: "Connected to the game server",
+    }),
+  );
+
+  socket.on("message", (data) => {
+    console.log("Received:", data.toString());
+  });
 });
 
 server.listen(3000, () => {
