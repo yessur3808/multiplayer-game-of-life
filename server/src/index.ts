@@ -1,6 +1,9 @@
 import { createServer } from "node:http";
 import { WebSocketServer } from "ws";
 
+const host = process.env.HOST ?? "0.0.0.0";
+const port = Number.parseInt(process.env.PORT ?? "3000", 10);
+
 const server = createServer();
 
 const webSocketServer = new WebSocketServer({
@@ -23,6 +26,6 @@ webSocketServer.on("connection", (socket) => {
   });
 });
 
-server.listen(3000, () => {
-  console.log("Server listening on http://localhost:3000");
+server.listen(port, host, () => {
+  console.log(`Server listening on http://${host}:${port}`);
 });

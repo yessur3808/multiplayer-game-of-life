@@ -4,7 +4,8 @@ export const App = () => {
   const [message, setMessage] = useState("Connecting...");
 
   useEffect(() => {
-    const socket = new WebSocket("ws://localhost:3000/ws");
+    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+    const socket = new WebSocket(`${protocol}//${window.location.host}/ws`);
 
     socket.addEventListener("open", () => {
       socket.send(
