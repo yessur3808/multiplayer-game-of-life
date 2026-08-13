@@ -35,6 +35,7 @@ describe("createApp", () => {
       width: 8,
       height: 6,
       simulationIntervalMs: 10,
+      initialBlockCount: 0,
     });
 
     app.server.listen(0, "127.0.0.1");
@@ -56,6 +57,7 @@ describe("createApp", () => {
       height: 6,
       simulationIntervalMs: 60_000,
       random: () => 0,
+      initialBlockCount: 0,
     });
 
     app.server.listen(0, "127.0.0.1");
@@ -105,6 +107,7 @@ describe("createApp", () => {
       height: 6,
       simulationIntervalMs: 60_000,
       random: () => randomValues[randomCalls++] ?? 0,
+      initialBlockCount: 0,
     });
 
     app.server.listen(0, "127.0.0.1");
@@ -129,6 +132,7 @@ describe("createApp", () => {
       height: 6,
       simulationIntervalMs: 60_000,
       random: () => 0,
+      initialBlockCount: 0,
     });
     firstApp.server.listen(0, "127.0.0.1");
     await once(firstApp.server, "listening");
@@ -144,6 +148,7 @@ describe("createApp", () => {
       height: 6,
       simulationIntervalMs: 60_000,
       random: () => 0.5,
+      initialBlockCount: 0,
     });
     restartedApp.server.listen(0, "127.0.0.1");
     await once(restartedApp.server, "listening");
@@ -164,6 +169,7 @@ describe("createApp", () => {
       width: 8,
       height: 6,
       simulationIntervalMs: 10,
+      initialBlockCount: 0,
     });
     app.server.listen(0, "127.0.0.1");
     await once(app.server, "listening");
@@ -202,6 +208,7 @@ describe("createApp", () => {
       height: 8,
       simulationIntervalMs: 60_000,
       random: () => randomValues[randomIndex++] ?? 0,
+      initialBlockCount: 0,
     });
     app.server.listen(0, "127.0.0.1");
     await once(app.server, "listening");
@@ -247,6 +254,74 @@ describe("createApp", () => {
     await app.close();
   });
 
+  it("starts with two non-overlapping blocks at random positions", async () => {
+    const app = createGameServer({
+      width: 8,
+      height: 6,
+      simulationIntervalMs: 60_000,
+      random: () => 0,
+    });
+    app.server.listen(0, "127.0.0.1");
+    await once(app.server, "listening");
+
+    expect(app.game.getSnapshot()).toMatchObject({
+      generation: 0,
+      revision: 2,
+      cells: [
+        { x: 0, y: 0, color: [226, 54, 54] },
+        { x: 1, y: 0, color: [226, 54, 54] },
+        { x: 0, y: 1, color: [226, 54, 54] },
+        { x: 1, y: 1, color: [226, 54, 54] },
+        { x: 2, y: 0, color: [226, 54, 54] },
+        { x: 3, y: 0, color: [226, 54, 54] },
+        { x: 2, y: 1, color: [226, 54, 54] },
+        { x: 3, y: 1, color: [226, 54, 54] },
+      ],
+    });
+
+    await app.close();
+  });
+
+  it("broadcasts a cell placed by one client to another client", async () => {
+    const app = createGameServer({
+      width: 8,
+      height: 6,
+      simulationIntervalMs: 60_000,
+      random: () => 0,
+      initialBlockCount: 0,
+    });
+    app.server.listen(0, "127.0.0.1");
+    await once(app.server, "listening");
+    const { port } = app.server.address() as AddressInfo;
+    const firstClient = new WebSocket(
+      `ws://127.0.0.1:${port}/ws?clientId=${CLIENT_ID}`,
+    );
+    const secondClient = new WebSocket(
+      `ws://127.0.0.1:${port}/ws?clientId=${SECOND_CLIENT_ID}`,
+    );
+    await Promise.all([once(firstClient, "open"), once(secondClient, "open")]);
+
+    const secondClientSnapshot = new Promise<ServerMessage>((resolve) => {
+      secondClient.on("message", (data) => {
+        const message = JSON.parse(data.toString()) as ServerMessage;
+
+        if (message.type === "snapshot" && message.revision === 1) {
+          resolve(message);
+        }
+      });
+    });
+
+    firstClient.send(JSON.stringify({ type: "place_cell", x: 3, y: 2 }));
+
+    await expect(secondClientSnapshot).resolves.toMatchObject({
+      type: "snapshot",
+      revision: 1,
+      cells: [{ x: 3, y: 2, color: [226, 54, 54] }],
+    });
+
+    await app.close();
+  });
+
   it.each([
     { description: "missing", query: "" },
     { description: "empty", query: "?clientId=" },
@@ -260,6 +335,7 @@ describe("createApp", () => {
       width: 8,
       height: 6,
       simulationIntervalMs: 60_000,
+      initialBlockCount: 0,
     });
 
     app.server.listen(0, "127.0.0.1");

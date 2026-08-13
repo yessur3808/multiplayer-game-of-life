@@ -12,6 +12,7 @@ export interface AppOptions {
   height: number;
   simulationIntervalMs: number;
   random?: () => number;
+  initialBlockCount?: number;
 }
 
 export interface App {
@@ -45,6 +46,7 @@ export const createGameServer = ({
   height,
   simulationIntervalMs,
   random = Math.random,
+  initialBlockCount = 2,
 }: AppOptions): App => {
   const server = createServer((_request, response) => {
     response.writeHead(404).end();
@@ -66,6 +68,34 @@ export const createGameServer = ({
   let running = false;
 
   const game = new Game(width, height);
+
+  const availableBlockOrigins = Array.from(
+    { length: Math.max(0, height - 1) },
+    (_, y) =>
+      Array.from({ length: Math.max(0, width - 1) }, (_, x) => ({ x, y })),
+  ).flat();
+
+  for (
+    let blockIndex = 0;
+    blockIndex < initialBlockCount && availableBlockOrigins.length > 0;
+    blockIndex += 1
+  ) {
+    const originIndex = Math.floor(random() * availableBlockOrigins.length);
+    const origin = availableBlockOrigins[originIndex];
+
+    game.placePattern("block", origin.x, origin.y, createPlayerColor(random));
+
+    for (let index = availableBlockOrigins.length - 1; index >= 0; index -= 1) {
+      const candidate = availableBlockOrigins[index];
+
+      if (
+        Math.abs(candidate.x - origin.x) < 2 &&
+        Math.abs(candidate.y - origin.y) < 2
+      ) {
+        availableBlockOrigins.splice(index, 1);
+      }
+    }
+  }
 
   const send = (socket: WebSocket, message: ServerMessage): void => {
     if (socket.readyState === WebSocket.OPEN) {
