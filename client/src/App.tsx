@@ -1,32 +1,13 @@
-import { useEffect, useState } from "react";
-
-import { getClientId } from "./lib/clientId";
+import { useGameSocket } from "./hooks/useGameSocket";
 
 export const App = () => {
-  const [message, setMessage] = useState("Connecting...");
+  const { status, error, snapshot } = useGameSocket();
 
-  useEffect(() => {
-    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const url = new URL(`${protocol}//${window.location.host}/ws`);
-    url.searchParams.set("clientId", getClientId());
-    const socket = new WebSocket(url);
-
-    socket.addEventListener("open", () => {
-      socket.send(
-        JSON.stringify({
-          type: "hello",
-        }),
-      );
-    });
-
-    socket.addEventListener("message", (event) => {
-      setMessage(event.data);
-    });
-
-    return () => {
-      socket.close();
-    };
-  }, []);
-
-  return <main>{message}</main>;
+  return (
+    <main>
+      <p>Connection: {status}</p>
+      {error && <p role="alert">{error}</p>}
+      {snapshot && <pre>{JSON.stringify(snapshot, null, 2)}</pre>}
+    </main>
+  );
 };
