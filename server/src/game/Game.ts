@@ -1,7 +1,7 @@
+import { stepBoard } from "./rules/index.js";
+import { PATTERNS, type PatternName } from "./patterns/patterns.js";
 import { cellKey, keyToCoordinates } from "./coordinates.js";
-import { stepBoard } from "./generation.js";
-import { PATTERNS, type PatternName } from "./patterns.js";
-import type { Board, Color, GameSnapshot } from "./types.js";
+import { Board, Color, GameSnapshot } from "./types.js";
 
 export class Game {
   private board: Board = new Map();

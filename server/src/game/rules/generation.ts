@@ -1,6 +1,6 @@
 import { averageColors } from "./colors.js";
-import { cellKey } from "./coordinates.js";
-import type { Board, Color } from "./types.js";
+import { cellKey } from "../coordinates.js";
+import { Board, Color } from "../types.js";
 
 export const NEIGHBOR_OFFSETS: ReadonlyArray<
   readonly [xOffset: number, yOffset: number]

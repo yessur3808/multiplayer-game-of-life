@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 
-import { cellKey } from "./coordinates.js";
-import { getLiveNeighborColors, stepBoard } from "./generation.js";
-import type { Board, Color } from "./types.js";
+import { getLiveNeighborColors, stepBoard } from "./index.js";
+import { cellKey } from "../coordinates.js";
+import { Board, Color } from "../types.js";
 
 describe("getLiveNeighborColors", () => {
   it("returns only live neighbor colors within the board", () => {
