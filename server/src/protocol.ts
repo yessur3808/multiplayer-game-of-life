@@ -15,12 +15,22 @@ const placePatternSchema = z
   .object({
     type: z.literal("place_pattern"),
     pattern: patternNameSchema,
+    x: z.number().int(),
+    y: z.number().int(),
+  })
+  .strict();
+
+const setRunningSchema = z
+  .object({
+    type: z.literal("set_running"),
+    running: z.boolean(),
   })
   .strict();
 
 export const clientMsgSchema = z.discriminatedUnion("type", [
   placeCellSchema,
   placePatternSchema,
+  setRunningSchema,
 ]);
 
 export type ClientMessage = z.infer<typeof clientMsgSchema>;
@@ -38,6 +48,7 @@ export interface SnapshotMessage {
   type: "snapshot";
   generation: number;
   revision: number;
+  running: boolean;
   cells: LiveCell[];
 }
 
@@ -49,7 +60,4 @@ export interface ErrorMessage {
 
 export type ServerMessage = WelcomeMessage | SnapshotMessage | ErrorMessage;
 
-export const clientIdSchema = z
-  .string()
-  .uuid()
-  .max(64);
+export const clientIdSchema = z.string().uuid().max(64);

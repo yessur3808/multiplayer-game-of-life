@@ -32,7 +32,8 @@ docker run --rm -p 3000:3000 multiplayer-game-of-life-server
 - A server restart resets the world.
 - Placing a cell over an existing cell replaces its color.
 - Pattern placement replaces any cells covered by the pattern.
-- Patterns are positioned randomly by the server.
+- A selected pattern is placed from the board cell clicked by the player.
+- Play and pause control the simulation for the shared room.
 - A surviving cell retains its existing color.
 - A newborn cell receives the rounded RGB arithmetic mean of its
   three live neighbors.

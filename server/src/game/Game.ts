@@ -11,7 +11,6 @@ export class Game {
   constructor(
     readonly width: number,
     readonly height: number,
-    private readonly random: () => number = Math.random,
   ) {}
 
   tick(): void {
@@ -56,19 +55,26 @@ export class Game {
     return true;
   }
 
-  placePattern(patternName: PatternName, color: Color): boolean {
+  placePattern(
+    patternName: PatternName,
+    originX: number,
+    originY: number,
+    color: Color,
+  ): boolean {
     const pattern = PATTERNS[patternName];
     const maxOriginX = this.width - pattern.width;
     const maxOriginY = this.height - pattern.height;
 
-    if (maxOriginX < 0 || maxOriginY < 0) {
-      throw new Error(
-        `Pattern "${patternName}" does not fit on a ${this.width}x${this.height} board`,
-      );
+    if (
+      !Number.isInteger(originX) ||
+      !Number.isInteger(originY) ||
+      originX < 0 ||
+      originY < 0 ||
+      originX > maxOriginX ||
+      originY > maxOriginY
+    ) {
+      return false;
     }
-
-    const originX = Math.floor(this.random() * (maxOriginX + 1));
-    const originY = Math.floor(this.random() * (maxOriginY + 1));
 
     for (const [offsetX, offsetY] of pattern.cells) {
       const key = cellKey(originX + offsetX, originY + offsetY, this.width);

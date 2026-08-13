@@ -90,6 +90,7 @@ describe("createApp", () => {
         type: "snapshot",
         generation: 0,
         revision: 0,
+        running: true,
         cells: [],
       },
     ]);
@@ -157,6 +158,41 @@ describe("createApp", () => {
     expect(restartedWelcome.playerColor).toEqual([54, 226, 226]);
 
     await restartedApp.close();
+  });
+
+  it("pauses and resumes the shared simulation", async () => {
+    const app = createGameServer({
+      width: 8,
+      height: 6,
+      simulationIntervalMs: 10,
+    });
+    app.server.listen(0, "127.0.0.1");
+    await once(app.server, "listening");
+    const { port } = app.server.address() as AddressInfo;
+    const socket = new WebSocket(
+      `ws://127.0.0.1:${port}/ws?clientId=${CLIENT_ID}`,
+    );
+    await once(socket, "open");
+
+    socket.send(JSON.stringify({ type: "set_running", running: false }));
+    await new Promise<void>((resolve) => {
+      socket.on("message", (data) => {
+        const message = JSON.parse(data.toString()) as ServerMessage;
+        if (message.type === "snapshot" && !message.running) {
+          resolve();
+        }
+      });
+    });
+    const pausedGeneration = app.game.getSnapshot().generation;
+    await new Promise((resolve) => setTimeout(resolve, 30));
+    expect(app.game.getSnapshot().generation).toBe(pausedGeneration);
+
+    socket.send(JSON.stringify({ type: "set_running", running: true }));
+    await expect
+      .poll(() => app.game.getSnapshot().generation)
+      .toBeGreaterThan(pausedGeneration);
+
+    await app.close();
   });
 
   it.each([

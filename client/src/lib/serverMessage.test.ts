@@ -13,6 +13,7 @@ describe("parseServerMessage", () => {
       type: "snapshot",
       generation: 4,
       revision: 7,
+      running: true,
       cells: [{ x: 1, y: 2, color: [255, 0, 128] }],
     },
     { type: "error", code: "INVALID_MESSAGE", message: "Invalid message" },
@@ -29,12 +30,14 @@ describe("parseServerMessage", () => {
       type: "snapshot",
       generation: 1,
       revision: "new",
+      running: true,
       cells: [],
     }),
     JSON.stringify({
       type: "snapshot",
       generation: 1,
       revision: 1,
+      running: true,
       cells: [{ x: 0, y: 0, color: [300, 0, 0] }],
     }),
   ])("rejects malformed input", (rawValue) => {

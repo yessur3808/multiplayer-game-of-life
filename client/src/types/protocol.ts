@@ -22,9 +22,19 @@ export interface PlaceCellMessage {
 export interface PlacePatternMessage {
   type: "place_pattern";
   pattern: PatternName;
+  x: number;
+  y: number;
 }
 
-export type ClientMessage = PlaceCellMessage | PlacePatternMessage;
+export interface SetRunningMessage {
+  type: "set_running";
+  running: boolean;
+}
+
+export type ClientMessage =
+  | PlaceCellMessage
+  | PlacePatternMessage
+  | SetRunningMessage;
 
 export interface WelcomeMessage {
   type: "welcome";
@@ -36,6 +46,7 @@ export interface SnapshotMessage {
   type: "snapshot";
   generation: number;
   revision: number;
+  running: boolean;
   cells: LiveCell[];
 }
 

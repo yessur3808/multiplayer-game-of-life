@@ -44,6 +44,7 @@ describe("useGameSocket", () => {
           type: "snapshot",
           generation: 2,
           revision: 3,
+          running: true,
           cells: [],
         }),
       );
@@ -70,6 +71,7 @@ describe("useGameSocket", () => {
           type: "snapshot",
           generation: 5,
           revision: 5,
+          running: true,
           cells: [],
         }),
       );
@@ -78,6 +80,7 @@ describe("useGameSocket", () => {
           type: "snapshot",
           generation: 4,
           revision: 4,
+          running: true,
           cells: [],
         }),
       );
@@ -95,10 +98,12 @@ describe("useGameSocket", () => {
     act(() => socket.open());
 
     expect(result.current.placeCell(1, 2)).toBe(true);
-    expect(result.current.placePattern("glider")).toBe(true);
+    expect(result.current.placePattern("glider", 3, 4)).toBe(true);
+    expect(result.current.setRunning(false)).toBe(true);
     expect(socket.sentMessages.map((message) => JSON.parse(message))).toEqual([
       { type: "place_cell", x: 1, y: 2 },
-      { type: "place_pattern", pattern: "glider" },
+      { type: "place_pattern", pattern: "glider", x: 3, y: 4 },
+      { type: "set_running", running: false },
     ]);
   });
 
@@ -122,6 +127,7 @@ describe("useGameSocket", () => {
           type: "snapshot",
           generation: 99,
           revision: 99,
+          running: true,
           cells: [],
         }),
       );

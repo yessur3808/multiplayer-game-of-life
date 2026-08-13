@@ -49,6 +49,7 @@ const isServerMessage = (value: unknown): value is ServerMessage => {
     return (
       isNonNegativeInteger(value.generation) &&
       isNonNegativeInteger(value.revision) &&
+      typeof value.running === "boolean" &&
       Array.isArray(value.cells) &&
       value.cells.every(isLiveCell)
     );

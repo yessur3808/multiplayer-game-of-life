@@ -49,11 +49,11 @@ describe("Game.placeCell", () => {
 });
 
 describe("Game.placePattern", () => {
-  it("places the named pattern at a random valid origin in the supplied color", () => {
-    const game = new Game(5, 5, () => 0.99);
+  it("places the named pattern at the supplied origin and color", () => {
+    const game = new Game(5, 5);
     const color: Color = [40, 120, 200];
 
-    expect(game.placePattern("glider", color)).toBe(true);
+    expect(game.placePattern("glider", 2, 2, color)).toBe(true);
     expect(game.getSnapshot()).toMatchObject({
       revision: 1,
       cells: [
@@ -66,18 +66,10 @@ describe("Game.placePattern", () => {
     });
   });
 
-  it.each([
-    { width: 2, height: 3 },
-    { width: 3, height: 2 },
-  ])(
-    "throws without incrementing revision on a $width x $height board",
-    ({ width, height }) => {
-      const game = new Game(width, height);
+  it("rejects an origin where the pattern would exceed the board", () => {
+    const game = new Game(5, 5);
 
-      expect(() => game.placePattern("glider", [255, 0, 0])).toThrow(
-        `Pattern "glider" does not fit on a ${width}x${height} board`,
-      );
-      expect(game.getSnapshot()).toMatchObject({ revision: 0, cells: [] });
-    },
-  );
+    expect(game.placePattern("glider", 3, 3, [255, 0, 0])).toBe(false);
+    expect(game.getSnapshot()).toMatchObject({ revision: 0, cells: [] });
+  });
 });

@@ -63,8 +63,9 @@ export const createGameServer = ({
     },
   });
   const playerColors = new Map<string, Color>();
+  let running = true;
 
-  const game = new Game(width, height, random);
+  const game = new Game(width, height);
 
   const send = (socket: WebSocket, message: ServerMessage): void => {
     if (socket.readyState === WebSocket.OPEN) {
@@ -78,6 +79,7 @@ export const createGameServer = ({
       type: "snapshot",
       generation,
       revision,
+      running,
       cells,
     };
 
@@ -101,13 +103,15 @@ export const createGameServer = ({
       board: { width, height },
     });
     const { generation, revision, cells } = game.getSnapshot();
-    send(socket, { type: "snapshot", generation, revision, cells });
+    send(socket, { type: "snapshot", generation, revision, running, cells });
 
     socket.on("message", (data) => {
       try {
         const message = clientMsgSchema.parse(JSON.parse(data.toString()));
 
-        if (message.type === "place_cell") {
+        if (message.type === "set_running") {
+          running = message.running;
+        } else if (message.type === "place_cell") {
           if (!game.placeCell(message.x, message.y, playerColor)) {
             send(socket, {
               type: "error",
@@ -116,8 +120,15 @@ export const createGameServer = ({
             });
             return;
           }
-        } else {
-          game.placePattern(message.pattern, playerColor);
+        } else if (
+          !game.placePattern(message.pattern, message.x, message.y, playerColor)
+        ) {
+          send(socket, {
+            type: "error",
+            code: "INVALID_PLACEMENT",
+            message: "Pattern does not fit at those coordinates",
+          });
+          return;
         }
 
         broadcastSnapshot();
@@ -132,8 +143,10 @@ export const createGameServer = ({
   });
 
   const simulationTimer = setInterval(() => {
-    game.tick();
-    broadcastSnapshot();
+    if (running) {
+      game.tick();
+      broadcastSnapshot();
+    }
   }, simulationIntervalMs);
 
   let closePromise: Promise<void> | undefined;

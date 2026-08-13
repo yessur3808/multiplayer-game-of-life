@@ -1,4 +1,10 @@
-import { act, render, screen } from "@testing-library/react";
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+} from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { App } from "./App";
@@ -18,6 +24,7 @@ describe("App", () => {
   });
 
   afterEach(() => {
+    cleanup();
     vi.restoreAllMocks();
     globalThis.WebSocket = originalWebSocket;
   });
@@ -26,15 +33,48 @@ describe("App", () => {
     render(<App />);
     const socket = FakeWebSocket.instances[0];
 
-    expect(screen.getByText("Connection: connecting")).toBeTruthy();
+    expect(screen.getByText("Connecting")).toBeTruthy();
 
     act(() => socket.open());
 
-    expect(screen.getByText("Connection: connected")).toBeTruthy();
+    expect(screen.getByText("Connected")).toBeTruthy();
     expect(socket.sentMessages).toEqual([]);
   });
 
   it("renders the canvas from welcome board dimensions and snapshot cells", () => {
+    const { container } = render(<App />);
+    const socket = FakeWebSocket.instances[0];
+
+    act(() => {
+      socket.open();
+      socket.receive(
+        JSON.stringify({
+          type: "welcome",
+          playerColor: [10, 20, 30],
+          board: { width: 80, height: 50 },
+        }),
+      );
+      socket.receive(
+        JSON.stringify({
+          type: "snapshot",
+          generation: 0,
+          revision: 0,
+          running: true,
+          cells: [],
+        }),
+      );
+    });
+
+    expect(
+      screen.getByLabelText("Multiplayer Game of Life board"),
+    ).toBeTruthy();
+    expect(
+      container.querySelector<HTMLElement>(".player-color__swatch")?.style
+        .backgroundColor,
+    ).toBe("rgb(10, 20, 30)");
+  });
+
+  it("places a cell when the connected canvas is clicked", () => {
     render(<App />);
     const socket = FakeWebSocket.instances[0];
 
@@ -52,13 +92,129 @@ describe("App", () => {
           type: "snapshot",
           generation: 0,
           revision: 0,
+          running: true,
           cells: [],
         }),
       );
     });
 
-    expect(
-      screen.getByLabelText("Multiplayer Game of Life board"),
-    ).toBeTruthy();
+    const canvas = screen.getByLabelText("Multiplayer Game of Life board");
+    vi.spyOn(canvas, "getBoundingClientRect").mockReturnValue({
+      left: 0,
+      top: 0,
+      width: 960,
+      height: 600,
+      right: 960,
+      bottom: 600,
+      x: 0,
+      y: 0,
+      toJSON: () => ({}),
+    });
+
+    fireEvent.click(canvas, { clientX: 18, clientY: 30 });
+
+    expect(JSON.parse(socket.sentMessages[0])).toEqual({
+      type: "place_cell",
+      x: 1,
+      y: 2,
+    });
+  });
+
+  it("selects a pattern and places it at the clicked board origin", () => {
+    render(<App />);
+    const socket = FakeWebSocket.instances[0];
+
+    act(() => {
+      socket.open();
+      socket.receive(
+        JSON.stringify({
+          type: "welcome",
+          playerColor: [10, 20, 30],
+          board: { width: 80, height: 50 },
+        }),
+      );
+      socket.receive(
+        JSON.stringify({
+          type: "snapshot",
+          generation: 0,
+          revision: 0,
+          running: true,
+          cells: [],
+        }),
+      );
+    });
+
+    const gliderButton = screen.getByRole("button", { name: "Glider" });
+    fireEvent.click(gliderButton);
+    expect(gliderButton.getAttribute("aria-pressed")).toBe("true");
+
+    const canvas = screen.getByLabelText("Multiplayer Game of Life board");
+    vi.spyOn(canvas, "getBoundingClientRect").mockReturnValue({
+      left: 0,
+      top: 0,
+      width: 960,
+      height: 600,
+      right: 960,
+      bottom: 600,
+      x: 0,
+      y: 0,
+      toJSON: () => ({}),
+    });
+    fireEvent.click(canvas, { clientX: 18, clientY: 30 });
+
+    expect(JSON.parse(socket.sentMessages[0])).toEqual({
+      type: "place_pattern",
+      pattern: "glider",
+      x: 1,
+      y: 2,
+    });
+  });
+
+  it("sends shared pause and play commands", () => {
+    render(<App />);
+    const socket = FakeWebSocket.instances[0];
+
+    act(() => {
+      socket.open();
+      socket.receive(
+        JSON.stringify({
+          type: "welcome",
+          playerColor: [10, 20, 30],
+          board: { width: 80, height: 50 },
+        }),
+      );
+      socket.receive(
+        JSON.stringify({
+          type: "snapshot",
+          generation: 0,
+          revision: 0,
+          running: true,
+          cells: [],
+        }),
+      );
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "Pause simulation" }));
+    expect(JSON.parse(socket.sentMessages[0])).toEqual({
+      type: "set_running",
+      running: false,
+    });
+
+    act(() => {
+      socket.receive(
+        JSON.stringify({
+          type: "snapshot",
+          generation: 0,
+          revision: 0,
+          running: false,
+          cells: [],
+        }),
+      );
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Play simulation" }));
+    expect(JSON.parse(socket.sentMessages[1])).toEqual({
+      type: "set_running",
+      running: true,
+    });
   });
 });

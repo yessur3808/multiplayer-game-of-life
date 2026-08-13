@@ -1,6 +1,8 @@
 import { useEffect, useRef } from "react";
+import type { MouseEvent } from "react";
 
 import type { BoardDescription, LiveCell } from "../types/protocol";
+import { pointerToCell } from "../lib/coordinates";
 
 const CELL_SIZE = 12;
 
@@ -8,13 +10,18 @@ interface GameCanvasProps {
   board: BoardDescription;
   cells: LiveCell[];
   disabled: boolean;
+  onCellClick(x: number, y: number): void;
 }
 
-export const GameCanvas = ({ board, cells, disabled }: GameCanvasProps) => {
+export const GameCanvas = ({
+  board,
+  cells,
+  disabled,
+  onCellClick,
+}: GameCanvasProps) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   const logicalWidth = board.width * CELL_SIZE;
-
   const logicalHeight = board.height * CELL_SIZE;
 
   useEffect(() => {
@@ -33,17 +40,13 @@ export const GameCanvas = ({ board, cells, disabled }: GameCanvasProps) => {
     const pixelRatio = window.devicePixelRatio || 1;
 
     canvas.width = logicalWidth * pixelRatio;
-
     canvas.height = logicalHeight * pixelRatio;
 
     canvas.style.width = `${logicalWidth}px`;
-
     canvas.style.height = `${logicalHeight}px`;
 
     context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
-
     context.fillStyle = "#111827";
-
     context.fillRect(0, 0, logicalWidth, logicalHeight);
 
     for (const cell of cells) {
@@ -60,11 +63,36 @@ export const GameCanvas = ({ board, cells, disabled }: GameCanvasProps) => {
     }
   }, [cells, logicalHeight, logicalWidth]);
 
+  const handleClick = (event: MouseEvent<HTMLCanvasElement>): void => {
+    if (disabled) {
+      return;
+    }
+
+    const rectangle = event.currentTarget.getBoundingClientRect();
+
+    const cell = pointerToCell(
+      {
+        x: event.clientX,
+        y: event.clientY,
+      },
+      rectangle,
+      board.width,
+      board.height,
+    );
+
+    if (!cell) {
+      return;
+    }
+
+    onCellClick(cell.x, cell.y);
+  };
+
   return (
     <canvas
       ref={canvasRef}
       className={disabled ? "game-canvas game-canvas--disabled" : "game-canvas"}
       aria-label="Multiplayer Game of Life board"
+      onClick={handleClick}
     />
   );
 };
