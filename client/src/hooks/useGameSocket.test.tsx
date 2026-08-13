@@ -98,11 +98,11 @@ describe("useGameSocket", () => {
     act(() => socket.open());
 
     expect(result.current.placeCell(1, 2)).toBe(true);
-    expect(result.current.placePattern("glider", 3, 4)).toBe(true);
+    expect(result.current.placePattern("glider")).toBe(true);
     expect(result.current.setRunning(false)).toBe(true);
     expect(socket.sentMessages.map((message) => JSON.parse(message))).toEqual([
       { type: "place_cell", x: 1, y: 2 },
-      { type: "place_pattern", pattern: "glider", x: 3, y: 4 },
+      { type: "place_pattern", pattern: "glider" },
       { type: "set_running", running: false },
     ]);
   });

@@ -11,7 +11,12 @@ export interface BoardDescription {
   height: number;
 }
 
-export type PatternName = "block" | "blinker" | "glider" | "beacon";
+export type PatternName =
+  | "block"
+  | "blinker"
+  | "glider"
+  | "beacon"
+  | "lightweight_spaceship";
 
 export interface PlaceCellMessage {
   type: "place_cell";
@@ -22,8 +27,6 @@ export interface PlaceCellMessage {
 export interface PlacePatternMessage {
   type: "place_pattern";
   pattern: PatternName;
-  x: number;
-  y: number;
 }
 
 export interface SetRunningMessage {

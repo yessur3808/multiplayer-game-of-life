@@ -30,7 +30,7 @@ export interface GameConnection {
   error: string | null;
 
   placeCell(x: number, y: number): boolean;
-  placePattern(pattern: PatternName, x: number, y: number): boolean;
+  placePattern(pattern: PatternName): boolean;
   setRunning(running: boolean): boolean;
 }
 
@@ -202,12 +202,10 @@ export const useGameSocket = (): GameConnection => {
   );
 
   const placePattern = useCallback(
-    (pattern: PatternName, x: number, y: number): boolean =>
+    (pattern: PatternName): boolean =>
       sendMessage({
         type: "place_pattern",
         pattern,
-        x,
-        y,
       }),
     [sendMessage],
   );
@@ -226,7 +224,7 @@ export const useGameSocket = (): GameConnection => {
     board,
     snapshot,
     playerColor,
-    running: snapshot?.running ?? true,
+    running: snapshot?.running ?? false,
     error,
     placeCell,
     placePattern,

@@ -85,4 +85,23 @@ export class Game {
 
     return true;
   }
+
+  placePatternRandom(
+    patternName: PatternName,
+    color: Color,
+    random: () => number = Math.random,
+  ): boolean {
+    const pattern = PATTERNS[patternName];
+    const maxOriginX = this.width - pattern.width;
+    const maxOriginY = this.height - pattern.height;
+
+    if (maxOriginX < 0 || maxOriginY < 0) {
+      return false;
+    }
+
+    const originX = Math.floor(random() * (maxOriginX + 1));
+    const originY = Math.floor(random() * (maxOriginY + 1));
+
+    return this.placePattern(patternName, originX, originY, color);
+  }
 }

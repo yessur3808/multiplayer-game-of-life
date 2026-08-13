@@ -3,9 +3,8 @@ import type { Color, PatternName } from "../types/protocol";
 interface GameToolbarProps {
   disabled: boolean;
   playerColor: Color | null;
-  selectedPattern: PatternName | null;
   running: boolean;
-  onSelectPattern(pattern: PatternName): void;
+  onPlacePattern(pattern: PatternName): void;
   onToggleRunning(): void;
 }
 
@@ -29,14 +28,17 @@ const PATTERN_BUTTONS: Array<{
     name: "beacon",
     label: "Beacon",
   },
+  {
+    name: "lightweight_spaceship",
+    label: "Lightweight Spaceship",
+  },
 ];
 
 export const GameToolbar = ({
   disabled,
   playerColor,
-  selectedPattern,
   running,
-  onSelectPattern,
+  onPlacePattern,
   onToggleRunning,
 }: GameToolbarProps) => {
   const playerColorValue =
@@ -79,19 +81,16 @@ export const GameToolbar = ({
 
       <div className="toolbar-patterns">
         {PATTERN_BUTTONS.map((pattern) => {
-          const isSelected = selectedPattern === pattern.name;
-
           return (
             <button
               key={pattern.name}
               type="button"
-              className={`toolbar-pattern-button${isSelected ? " toolbar-pattern-button--selected" : ""}`}
+              className="toolbar-pattern-button"
               disabled={disabled}
-              aria-pressed={isSelected}
               onClick={() => {
-                onSelectPattern(pattern.name);
+                onPlacePattern(pattern.name);
               }}
-              title={`Select ${pattern.label}, then click the board to place it`}
+              title={`Place ${pattern.label} at a random location`}
             >
               {pattern.label}
             </button>

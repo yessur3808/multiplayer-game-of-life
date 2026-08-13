@@ -59,7 +59,7 @@ describe("App", () => {
           type: "snapshot",
           generation: 0,
           revision: 0,
-          running: true,
+          running: false,
           cells: [],
         }),
       );
@@ -120,7 +120,7 @@ describe("App", () => {
     });
   });
 
-  it("selects a pattern and places it at the clicked board origin", () => {
+  it("requests random pattern placement from a toolbar button", () => {
     render(<App />);
     const socket = FakeWebSocket.instances[0];
 
@@ -144,33 +144,18 @@ describe("App", () => {
       );
     });
 
-    const gliderButton = screen.getByRole("button", { name: "Glider" });
-    fireEvent.click(gliderButton);
-    expect(gliderButton.getAttribute("aria-pressed")).toBe("true");
-
-    const canvas = screen.getByLabelText("Multiplayer Game of Life board");
-    vi.spyOn(canvas, "getBoundingClientRect").mockReturnValue({
-      left: 0,
-      top: 0,
-      width: 960,
-      height: 600,
-      right: 960,
-      bottom: 600,
-      x: 0,
-      y: 0,
-      toJSON: () => ({}),
+    const lightweightSpaceshipButton = screen.getByRole("button", {
+      name: "Lightweight Spaceship",
     });
-    fireEvent.click(canvas, { clientX: 18, clientY: 30 });
+    fireEvent.click(lightweightSpaceshipButton);
 
     expect(JSON.parse(socket.sentMessages[0])).toEqual({
       type: "place_pattern",
-      pattern: "glider",
-      x: 1,
-      y: 2,
+      pattern: "lightweight_spaceship",
     });
   });
 
-  it("sends shared pause and play commands", () => {
+  it("starts paused and sends shared play and pause commands", () => {
     render(<App />);
     const socket = FakeWebSocket.instances[0];
 
@@ -183,24 +168,6 @@ describe("App", () => {
           board: { width: 80, height: 50 },
         }),
       );
-      socket.receive(
-        JSON.stringify({
-          type: "snapshot",
-          generation: 0,
-          revision: 0,
-          running: true,
-          cells: [],
-        }),
-      );
-    });
-
-    fireEvent.click(screen.getByRole("button", { name: "Pause simulation" }));
-    expect(JSON.parse(socket.sentMessages[0])).toEqual({
-      type: "set_running",
-      running: false,
-    });
-
-    act(() => {
       socket.receive(
         JSON.stringify({
           type: "snapshot",
@@ -211,10 +178,28 @@ describe("App", () => {
         }),
       );
     });
+
     fireEvent.click(screen.getByRole("button", { name: "Play simulation" }));
-    expect(JSON.parse(socket.sentMessages[1])).toEqual({
+    expect(JSON.parse(socket.sentMessages[0])).toEqual({
       type: "set_running",
       running: true,
+    });
+
+    act(() => {
+      socket.receive(
+        JSON.stringify({
+          type: "snapshot",
+          generation: 0,
+          revision: 0,
+          running: true,
+          cells: [],
+        }),
+      );
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Pause simulation" }));
+    expect(JSON.parse(socket.sentMessages[1])).toEqual({
+      type: "set_running",
+      running: false,
     });
   });
 });

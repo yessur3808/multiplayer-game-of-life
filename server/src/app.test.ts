@@ -30,7 +30,7 @@ const connectAndReadWelcome = async (
 };
 
 describe("createApp", () => {
-  it("creates the servers and advances the game on the simulation interval", async () => {
+  it("creates the servers with the simulation initially paused", async () => {
     const app = createGameServer({
       width: 8,
       height: 6,
@@ -40,11 +40,10 @@ describe("createApp", () => {
     app.server.listen(0, "127.0.0.1");
     await once(app.server, "listening");
 
-    await expect
-      .poll(() => app.game.getSnapshot().generation)
-      .toBeGreaterThan(0);
+    await new Promise((resolve) => setTimeout(resolve, 30));
 
     expect(app.webSocketServer.options.path).toBe("/ws");
+    expect(app.game.getSnapshot().generation).toBe(0);
 
     await app.close();
 
@@ -90,7 +89,7 @@ describe("createApp", () => {
         type: "snapshot",
         generation: 0,
         revision: 0,
-        running: true,
+        running: false,
         cells: [],
       },
     ]);
@@ -160,7 +159,7 @@ describe("createApp", () => {
     await restartedApp.close();
   });
 
-  it("pauses and resumes the shared simulation", async () => {
+  it("starts the shared simulation and pauses it again", async () => {
     const app = createGameServer({
       width: 8,
       height: 6,
@@ -173,6 +172,11 @@ describe("createApp", () => {
       `ws://127.0.0.1:${port}/ws?clientId=${CLIENT_ID}`,
     );
     await once(socket, "open");
+
+    socket.send(JSON.stringify({ type: "set_running", running: true }));
+    await expect
+      .poll(() => app.game.getSnapshot().generation)
+      .toBeGreaterThan(0);
 
     socket.send(JSON.stringify({ type: "set_running", running: false }));
     await new Promise<void>((resolve) => {
@@ -187,10 +191,58 @@ describe("createApp", () => {
     await new Promise((resolve) => setTimeout(resolve, 30));
     expect(app.game.getSnapshot().generation).toBe(pausedGeneration);
 
-    socket.send(JSON.stringify({ type: "set_running", running: true }));
-    await expect
-      .poll(() => app.game.getSnapshot().generation)
-      .toBeGreaterThan(pausedGeneration);
+    await app.close();
+  });
+
+  it("places a requested pattern at a server-selected random origin", async () => {
+    const randomValues = [0, 0.5, 0.25];
+    let randomIndex = 0;
+    const app = createGameServer({
+      width: 10,
+      height: 8,
+      simulationIntervalMs: 60_000,
+      random: () => randomValues[randomIndex++] ?? 0,
+    });
+    app.server.listen(0, "127.0.0.1");
+    await once(app.server, "listening");
+    const { port } = app.server.address() as AddressInfo;
+    const socket = new WebSocket(
+      `ws://127.0.0.1:${port}/ws?clientId=${CLIENT_ID}`,
+    );
+    await once(socket, "open");
+
+    const patternSnapshot = new Promise<ServerMessage>((resolve) => {
+      socket.on("message", (data) => {
+        const message = JSON.parse(data.toString()) as ServerMessage;
+
+        if (message.type === "snapshot" && message.revision === 1) {
+          resolve(message);
+        }
+      });
+    });
+
+    socket.send(
+      JSON.stringify({
+        type: "place_pattern",
+        pattern: "lightweight_spaceship",
+      }),
+    );
+
+    await expect(patternSnapshot).resolves.toMatchObject({
+      type: "snapshot",
+      revision: 1,
+      cells: [
+        { x: 4, y: 1 },
+        { x: 7, y: 1 },
+        { x: 3, y: 2 },
+        { x: 3, y: 3 },
+        { x: 7, y: 3 },
+        { x: 3, y: 4 },
+        { x: 4, y: 4 },
+        { x: 5, y: 4 },
+        { x: 6, y: 4 },
+      ],
+    });
 
     await app.close();
   });

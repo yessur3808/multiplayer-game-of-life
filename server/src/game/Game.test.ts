@@ -73,3 +73,54 @@ describe("Game.placePattern", () => {
     expect(game.getSnapshot()).toMatchObject({ revision: 0, cells: [] });
   });
 });
+
+describe("Game.placePatternRandom", () => {
+  it("places a pattern at a random valid origin", () => {
+    const game = new Game(10, 8);
+    const randomValues = [0.5, 0.25];
+    let randomIndex = 0;
+    const color: Color = [40, 120, 200];
+
+    expect(
+      game.placePatternRandom(
+        "glider",
+        color,
+        () => randomValues[randomIndex++] ?? 0,
+      ),
+    ).toBe(true);
+    expect(game.getSnapshot().cells).toEqual([
+      { x: 5, y: 1, color },
+      { x: 6, y: 2, color },
+      { x: 4, y: 3, color },
+      { x: 5, y: 3, color },
+      { x: 6, y: 3, color },
+    ]);
+  });
+
+  it("rejects a pattern that cannot fit on the board", () => {
+    const game = new Game(2, 2);
+
+    expect(game.placePatternRandom("glider", [255, 0, 0])).toBe(false);
+    expect(game.getSnapshot()).toMatchObject({ revision: 0, cells: [] });
+  });
+});
+
+describe("Game.tick", () => {
+  it("evolves a blinker to its next oscillator phase", () => {
+    const game = new Game(5, 5);
+    const color: Color = [40, 120, 200];
+
+    game.placePattern("blinker", 1, 2, color);
+    game.tick();
+
+    expect(game.getSnapshot()).toMatchObject({
+      generation: 1,
+      revision: 2,
+      cells: [
+        { x: 2, y: 1, color },
+        { x: 2, y: 2, color },
+        { x: 2, y: 3, color },
+      ],
+    });
+  });
+});

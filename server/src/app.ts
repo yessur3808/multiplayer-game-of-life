@@ -63,7 +63,7 @@ export const createGameServer = ({
     },
   });
   const playerColors = new Map<string, Color>();
-  let running = true;
+  let running = false;
 
   const game = new Game(width, height);
 
@@ -121,12 +121,12 @@ export const createGameServer = ({
             return;
           }
         } else if (
-          !game.placePattern(message.pattern, message.x, message.y, playerColor)
+          !game.placePatternRandom(message.pattern, playerColor, random)
         ) {
           send(socket, {
             type: "error",
             code: "INVALID_PLACEMENT",
-            message: "Pattern does not fit at those coordinates",
+            message: "Pattern does not fit on the board",
           });
           return;
         }

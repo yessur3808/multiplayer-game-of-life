@@ -9,14 +9,18 @@ const placeCellSchema = z
   })
   .strict();
 
-const patternNameSchema = z.enum(["block", "blinker", "glider", "beacon"]);
+const patternNameSchema = z.enum([
+  "block",
+  "blinker",
+  "glider",
+  "beacon",
+  "lightweight_spaceship",
+]);
 
 const placePatternSchema = z
   .object({
     type: z.literal("place_pattern"),
     pattern: patternNameSchema,
-    x: z.number().int(),
-    y: z.number().int(),
   })
   .strict();
 

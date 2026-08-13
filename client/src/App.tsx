@@ -1,15 +1,9 @@
-import { useState } from "react";
-
 import { useGameSocket } from "./hooks/useGameSocket";
 import { GameCanvas } from "./components/GameCanvas";
 import { GameToolbar } from "./components/GameToolbar";
 import { StatusBar } from "./components/StatusBar";
-import type { PatternName } from "./types/protocol";
 
 export const App = () => {
-  const [selectedPattern, setSelectedPattern] = useState<PatternName | null>(
-    null,
-  );
   const {
     status,
     error,
@@ -21,15 +15,6 @@ export const App = () => {
     placePattern,
     setRunning,
   } = useGameSocket();
-
-  const handleBoardClick = (x: number, y: number): void => {
-    if (selectedPattern) {
-      placePattern(selectedPattern, x, y);
-      return;
-    }
-
-    placeCell(x, y);
-  };
 
   return (
     <main>
@@ -43,13 +28,8 @@ export const App = () => {
       <GameToolbar
         disabled={status !== "connected"}
         playerColor={playerColor}
-        selectedPattern={selectedPattern}
         running={running}
-        onSelectPattern={(pattern) => {
-          setSelectedPattern((currentPattern) =>
-            currentPattern === pattern ? null : pattern,
-          );
-        }}
+        onPlacePattern={placePattern}
         onToggleRunning={() => setRunning(!running)}
       />
 
@@ -59,7 +39,7 @@ export const App = () => {
             board={board}
             cells={snapshot.cells}
             disabled={status !== "connected"}
-            onCellClick={handleBoardClick}
+            onCellClick={placeCell}
           />
           {status !== "connected" && (
             <div className="connection-overlay">

@@ -59,11 +59,29 @@ export const GLIDER = {
   ],
 } as const satisfies GameOfLifePattern;
 
+export const LIGHTWEIGHT_SPACESHIP = {
+  name: "Lightweight Spaceship",
+  width: 5,
+  height: 4,
+  cells: [
+    [1, 0],
+    [4, 0],
+    [0, 1],
+    [0, 2],
+    [4, 2],
+    [0, 3],
+    [1, 3],
+    [2, 3],
+    [3, 3],
+  ],
+} as const satisfies GameOfLifePattern;
+
 export const PATTERNS = {
   block: BLOCK,
   blinker: BLINKER,
   beacon: BEACON,
   glider: GLIDER,
+  lightweight_spaceship: LIGHTWEIGHT_SPACESHIP,
 } as const satisfies Record<string, GameOfLifePattern>;
 
 export type PatternName = keyof typeof PATTERNS;
