@@ -28,7 +28,7 @@ average of its three live neighbors.
 
 ## Current behavior
 
-- There is one shared bounded board. It's default size is 80 × 50 cells.
+- There is one shared bounded board. Its default size is 80 × 50 cells.
 - The simulation starts paused and advances once per second by default while running.
 - Any connected player can place a cell and can start or pause the shared simulation.
 - Placing a cell on an occupied coordinate replaces its color.
