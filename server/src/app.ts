@@ -4,6 +4,7 @@ import { WebSocket, WebSocketServer } from "ws";
 
 import { createPlayerColor } from "./game/colors.js";
 import { Game } from "./game/Game.js";
+import { PATTERNS, type PatternName } from "./game/patterns/patterns.js";
 import type { Color } from "./game/types.js";
 import { clientMsgSchema, type ServerMessage } from "./protocol.js";
 
@@ -12,7 +13,7 @@ export interface AppOptions {
   height: number;
   simulationIntervalMs: number;
   random?: () => number;
-  initialBlockCount?: number;
+  initialPatternCount?: number;
 }
 
 export interface App {
@@ -46,7 +47,7 @@ export const createGameServer = ({
   height,
   simulationIntervalMs,
   random = Math.random,
-  initialBlockCount = 2,
+  initialPatternCount = 2,
 }: AppOptions): App => {
   const server = createServer((_request, response) => {
     response.writeHead(404).end();
@@ -68,32 +69,67 @@ export const createGameServer = ({
   let running = false;
 
   const game = new Game(width, height);
+  const patternNames = Object.keys(PATTERNS).filter((patternName) => {
+    const pattern = PATTERNS[patternName as PatternName];
 
-  const availableBlockOrigins = Array.from(
-    { length: Math.max(0, height - 1) },
-    (_, y) =>
-      Array.from({ length: Math.max(0, width - 1) }, (_, x) => ({ x, y })),
-  ).flat();
+    return pattern.width <= width && pattern.height <= height;
+  }) as PatternName[];
+  const initialPlayerColor =
+    initialPatternCount > 0 && patternNames.length > 0
+      ? createPlayerColor(random)
+      : undefined;
+  let initialPlayerColorAvailable = initialPlayerColor !== undefined;
+  const occupiedInitialCells = new Set<string>();
 
   for (
-    let blockIndex = 0;
-    blockIndex < initialBlockCount && availableBlockOrigins.length > 0;
-    blockIndex += 1
+    let patternIndex = 0;
+    patternIndex < initialPatternCount;
+    patternIndex += 1
   ) {
-    const originIndex = Math.floor(random() * availableBlockOrigins.length);
-    const origin = availableBlockOrigins[originIndex];
+    const viablePatterns = patternNames
+      .map((patternName) => {
+        const pattern = PATTERNS[patternName];
+        const origins = Array.from(
+          { length: height - pattern.height + 1 },
+          (_, y) =>
+            Array.from({ length: width - pattern.width + 1 }, (_, x) => ({
+              x,
+              y,
+            })),
+        )
+          .flat()
+          .filter(({ x, y }) =>
+            pattern.cells.every(
+              ([offsetX, offsetY]) =>
+                !occupiedInitialCells.has(`${x + offsetX},${y + offsetY}`),
+            ),
+          );
 
-    game.placePattern("block", origin.x, origin.y, createPlayerColor(random));
+        return { patternName, origins };
+      })
+      .filter(({ origins }) => origins.length > 0);
 
-    for (let index = availableBlockOrigins.length - 1; index >= 0; index -= 1) {
-      const candidate = availableBlockOrigins[index];
+    if (viablePatterns.length === 0) {
+      break;
+    }
 
-      if (
-        Math.abs(candidate.x - origin.x) < 2 &&
-        Math.abs(candidate.y - origin.y) < 2
-      ) {
-        availableBlockOrigins.splice(index, 1);
-      }
+    const selectedPattern =
+      viablePatterns[Math.floor(random() * viablePatterns.length)];
+    const origin =
+      selectedPattern.origins[
+        Math.floor(random() * selectedPattern.origins.length)
+      ];
+    const pattern = PATTERNS[selectedPattern.patternName];
+
+    game.placePattern(
+      selectedPattern.patternName,
+      origin.x,
+      origin.y,
+      initialPlayerColor!,
+    );
+
+    for (const [offsetX, offsetY] of pattern.cells) {
+      occupiedInitialCells.add(`${origin.x + offsetX},${origin.y + offsetY}`);
     }
   }
 
@@ -123,7 +159,13 @@ export const createGameServer = ({
     let playerColor = playerColors.get(clientId);
 
     if (playerColor === undefined) {
-      playerColor = createPlayerColor(random);
+      if (initialPlayerColorAvailable) {
+        playerColor = initialPlayerColor!;
+        initialPlayerColorAvailable = false;
+      } else {
+        playerColor = createPlayerColor(random);
+      }
+
       playerColors.set(clientId, playerColor);
     }
 
@@ -156,7 +198,7 @@ export const createGameServer = ({
           send(socket, {
             type: "error",
             code: "INVALID_PLACEMENT",
-            message: "Pattern does not fit on the board",
+            message: "Pattern does not fit in the available board space",
           });
           return;
         }

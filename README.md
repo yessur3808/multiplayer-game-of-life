@@ -29,11 +29,11 @@ average of its three live neighbors.
 ## Current behavior
 
 - There is one shared bounded board. Its default size is 80 × 50 cells.
-- The board starts with two randomly positioned Block patterns.
+- The board starts with two randomly selected and positioned patterns in the first player's assigned color.
 - The simulation starts paused and advances once per second by default while running.
 - Any connected player can place a cell and can start or pause the shared simulation.
 - Placing a cell on an occupied coordinate replaces its color.
-- The Block, Blinker, Glider, Beacon, and Lightweight Spaceship patterns are supported. The server chooses a random valid origin for a requested pattern, and occupied cells covered by it are replaced.
+- The Block, Blinker, Glider, Beacon, and Lightweight Spaceship patterns are supported. The server chooses a random valid origin for a requested pattern and avoids overlapping existing live cells.
 - Every browser receives a randomly generated player color. A UUID stored in browser local storage preserves that color across reconnects for the lifetime of the server process.
 - The board has hard edges. Cells outside it are treated as dead.
 - A process restart clears the board, resets the generation, and forgets player colors.
@@ -267,7 +267,7 @@ Server to client:
 }
 ```
 
-`INVALID_MESSAGE` is returned for malformed JSON or messages that fail schema validation. `INVALID_PLACEMENT` is returned for out-of-bounds cells or a pattern that cannot fit on the configured board.
+`INVALID_MESSAGE` is returned for malformed JSON or messages that fail schema validation. `INVALID_PLACEMENT` is returned for out-of-bounds cells or a pattern that cannot fit in the available board space without overlapping live cells.
 
 ## Technical decisions
 

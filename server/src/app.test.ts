@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import { WebSocket } from "ws";
 
 import { createGameServer } from "./app.js";
+import { BLOCK } from "./game/patterns/patterns.js";
 import type { ServerMessage, WelcomeMessage } from "./protocol.js";
 
 const CLIENT_ID = "123e4567-e89b-42d3-a456-426614174000";
@@ -35,7 +36,7 @@ describe("createApp", () => {
       width: 8,
       height: 6,
       simulationIntervalMs: 10,
-      initialBlockCount: 0,
+      initialPatternCount: 0,
     });
 
     app.server.listen(0, "127.0.0.1");
@@ -57,7 +58,7 @@ describe("createApp", () => {
       height: 6,
       simulationIntervalMs: 60_000,
       random: () => 0,
-      initialBlockCount: 0,
+      initialPatternCount: 0,
     });
 
     app.server.listen(0, "127.0.0.1");
@@ -107,7 +108,7 @@ describe("createApp", () => {
       height: 6,
       simulationIntervalMs: 60_000,
       random: () => randomValues[randomCalls++] ?? 0,
-      initialBlockCount: 0,
+      initialPatternCount: 0,
     });
 
     app.server.listen(0, "127.0.0.1");
@@ -132,7 +133,7 @@ describe("createApp", () => {
       height: 6,
       simulationIntervalMs: 60_000,
       random: () => 0,
-      initialBlockCount: 0,
+      initialPatternCount: 0,
     });
     firstApp.server.listen(0, "127.0.0.1");
     await once(firstApp.server, "listening");
@@ -148,7 +149,7 @@ describe("createApp", () => {
       height: 6,
       simulationIntervalMs: 60_000,
       random: () => 0.5,
-      initialBlockCount: 0,
+      initialPatternCount: 0,
     });
     restartedApp.server.listen(0, "127.0.0.1");
     await once(restartedApp.server, "listening");
@@ -169,7 +170,7 @@ describe("createApp", () => {
       width: 8,
       height: 6,
       simulationIntervalMs: 10,
-      initialBlockCount: 0,
+      initialPatternCount: 0,
     });
     app.server.listen(0, "127.0.0.1");
     await once(app.server, "listening");
@@ -208,7 +209,7 @@ describe("createApp", () => {
       height: 8,
       simulationIntervalMs: 60_000,
       random: () => randomValues[randomIndex++] ?? 0,
-      initialBlockCount: 0,
+      initialPatternCount: 0,
     });
     app.server.listen(0, "127.0.0.1");
     await once(app.server, "listening");
@@ -254,7 +255,45 @@ describe("createApp", () => {
     await app.close();
   });
 
-  it("starts with two non-overlapping blocks at random positions", async () => {
+  it("starts with two random patterns matching the initial color", async () => {
+    const randomValues = [0, 0, 0, 0.6, 0];
+    let randomIndex = 0;
+    const app = createGameServer({
+      width: 8,
+      height: 6,
+      simulationIntervalMs: 60_000,
+      random: () => randomValues[randomIndex++] ?? 0,
+    });
+    app.server.listen(0, "127.0.0.1");
+    await once(app.server, "listening");
+    const { port } = app.server.address() as AddressInfo;
+    const initial = await connectAndReadWelcome(port, CLIENT_ID);
+    const snapshot = app.game.getSnapshot();
+
+    expect(initial.playerColor).toEqual([226, 54, 54]);
+    expect(snapshot).toMatchObject({
+      generation: 0,
+      revision: 2,
+      cells: [
+        { x: 0, y: 0, color: [226, 54, 54] },
+        { x: 1, y: 0, color: [226, 54, 54] },
+        { x: 0, y: 1, color: [226, 54, 54] },
+        { x: 1, y: 1, color: [226, 54, 54] },
+        { x: 2, y: 0, color: [226, 54, 54] },
+        { x: 3, y: 1, color: [226, 54, 54] },
+        { x: 1, y: 2, color: [226, 54, 54] },
+        { x: 2, y: 2, color: [226, 54, 54] },
+        { x: 3, y: 2, color: [226, 54, 54] },
+      ],
+    });
+    for (const cell of snapshot.cells) {
+      expect(cell.color).toEqual(initial.playerColor);
+    }
+
+    await app.close();
+  });
+
+  it("keeps the two initial patterns from overlapping", async () => {
     const app = createGameServer({
       width: 8,
       height: 6,
@@ -264,20 +303,12 @@ describe("createApp", () => {
     app.server.listen(0, "127.0.0.1");
     await once(app.server, "listening");
 
-    expect(app.game.getSnapshot()).toMatchObject({
-      generation: 0,
-      revision: 2,
-      cells: [
-        { x: 0, y: 0, color: [226, 54, 54] },
-        { x: 1, y: 0, color: [226, 54, 54] },
-        { x: 0, y: 1, color: [226, 54, 54] },
-        { x: 1, y: 1, color: [226, 54, 54] },
-        { x: 2, y: 0, color: [226, 54, 54] },
-        { x: 3, y: 0, color: [226, 54, 54] },
-        { x: 2, y: 1, color: [226, 54, 54] },
-        { x: 3, y: 1, color: [226, 54, 54] },
-      ],
-    });
+    const snapshot = app.game.getSnapshot();
+    const coordinates = snapshot.cells.map(({ x, y }) => `${x},${y}`);
+
+    expect(snapshot.revision).toBe(2);
+    expect(snapshot.cells).toHaveLength(BLOCK.cells.length * 2);
+    expect(new Set(coordinates).size).toBe(snapshot.cells.length);
 
     await app.close();
   });
@@ -288,7 +319,7 @@ describe("createApp", () => {
       height: 6,
       simulationIntervalMs: 60_000,
       random: () => 0,
-      initialBlockCount: 0,
+      initialPatternCount: 0,
     });
     app.server.listen(0, "127.0.0.1");
     await once(app.server, "listening");
@@ -335,7 +366,7 @@ describe("createApp", () => {
       width: 8,
       height: 6,
       simulationIntervalMs: 60_000,
-      initialBlockCount: 0,
+      initialPatternCount: 0,
     });
 
     app.server.listen(0, "127.0.0.1");

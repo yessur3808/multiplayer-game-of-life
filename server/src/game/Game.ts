@@ -99,9 +99,28 @@ export class Game {
       return false;
     }
 
-    const originX = Math.floor(random() * (maxOriginX + 1));
-    const originY = Math.floor(random() * (maxOriginY + 1));
+    const originWidth = maxOriginX + 1;
+    const originHeight = maxOriginY + 1;
+    const originCount = originWidth * originHeight;
+    const randomOriginX = Math.floor(random() * originWidth);
+    const randomOriginY = Math.floor(random() * originHeight);
+    const randomOriginIndex = randomOriginY * originWidth + randomOriginX;
 
-    return this.placePattern(patternName, originX, originY, color);
+    for (let offset = 0; offset < originCount; offset += 1) {
+      const originIndex = (randomOriginIndex + offset) % originCount;
+      const originX = originIndex % originWidth;
+      const originY = Math.floor(originIndex / originWidth);
+      const overlapsLiveCell = pattern.cells.some(([offsetX, offsetY]) =>
+        this.board.has(
+          cellKey(originX + offsetX, originY + offsetY, this.width),
+        ),
+      );
+
+      if (!overlapsLiveCell) {
+        return this.placePattern(patternName, originX, originY, color);
+      }
+    }
+
+    return false;
   }
 }

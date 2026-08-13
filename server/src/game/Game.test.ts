@@ -103,6 +103,34 @@ describe("Game.placePatternRandom", () => {
     expect(game.placePatternRandom("glider", [255, 0, 0])).toBe(false);
     expect(game.getSnapshot()).toMatchObject({ revision: 0, cells: [] });
   });
+
+  it("moves random pattern placement to avoid overlapping live cells", () => {
+    const game = new Game(8, 6);
+    const existingColor: Color = [220, 40, 80];
+    const patternColor: Color = [40, 120, 200];
+
+    game.placePattern("block", 0, 0, existingColor);
+
+    expect(game.placePatternRandom("glider", patternColor, () => 0)).toBe(
+      true,
+    );
+
+    const snapshot = game.getSnapshot();
+
+    expect(snapshot.revision).toBe(2);
+    expect(snapshot.cells).toHaveLength(9);
+    expect(snapshot.cells).toEqual([
+      { x: 0, y: 0, color: existingColor },
+      { x: 1, y: 0, color: existingColor },
+      { x: 0, y: 1, color: existingColor },
+      { x: 1, y: 1, color: existingColor },
+      { x: 2, y: 0, color: patternColor },
+      { x: 3, y: 1, color: patternColor },
+      { x: 1, y: 2, color: patternColor },
+      { x: 2, y: 2, color: patternColor },
+      { x: 3, y: 2, color: patternColor },
+    ]);
+  });
 });
 
 describe("Game.tick", () => {
