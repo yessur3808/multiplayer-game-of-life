@@ -14,9 +14,11 @@ describe("App", () => {
   beforeEach(() => {
     FakeWebSocket.reset();
     globalThis.WebSocket = FakeWebSocket as unknown as typeof WebSocket;
+    vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue(null);
   });
 
   afterEach(() => {
+    vi.restoreAllMocks();
     globalThis.WebSocket = originalWebSocket;
   });
 
@@ -30,5 +32,33 @@ describe("App", () => {
 
     expect(screen.getByText("Connection: connected")).toBeTruthy();
     expect(socket.sentMessages).toEqual([]);
+  });
+
+  it("renders the canvas from welcome board dimensions and snapshot cells", () => {
+    render(<App />);
+    const socket = FakeWebSocket.instances[0];
+
+    act(() => {
+      socket.open();
+      socket.receive(
+        JSON.stringify({
+          type: "welcome",
+          playerColor: [10, 20, 30],
+          board: { width: 80, height: 50 },
+        }),
+      );
+      socket.receive(
+        JSON.stringify({
+          type: "snapshot",
+          generation: 0,
+          revision: 0,
+          cells: [],
+        }),
+      );
+    });
+
+    expect(
+      screen.getByLabelText("Multiplayer Game of Life board"),
+    ).toBeTruthy();
   });
 });
