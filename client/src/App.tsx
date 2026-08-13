@@ -18,6 +18,17 @@ export const App = () => {
 
   return (
     <main>
+      <h2
+        style={{
+          position: "relative",
+          marginTop: "12px",
+          paddingBottom: "12px",
+          textAlign: "center",
+        }}
+      >
+        Multiplayer Conway's Game of Life
+      </h2>
+
       <StatusBar
         status={status}
         generation={snapshot?.generation ?? 0}

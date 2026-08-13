@@ -3,8 +3,12 @@
 A real-time Multiplayer Conway's Game of Life simulation. Every connected browser sees & edits the same exact board, receives a persistent player color, and can control the shared simulation.
 
 The client side renders the board on a canvas. The Node.js server
-owns the board, applies commands in arrival order, advances generations, and
-shows snapshots. Browser timing & local state are to never be the source of truth.
+owns the board, applies commands in arrival order, advances generations, and shows snapshots. Browser timing & local state are to never be the source of truth.
+
+
+
+![Multiplayer Conway's Game of Life screenshot](./game.png)
+
 
 ## The problem
 
