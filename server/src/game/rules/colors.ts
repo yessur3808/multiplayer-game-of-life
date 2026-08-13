@@ -1,4 +1,4 @@
-import type { Color } from "../model/index.js";
+import type { Color } from "../types.js";
 
 export const averageColors = (colors: readonly Color[]): Color => {
   if (colors.length === 0) {

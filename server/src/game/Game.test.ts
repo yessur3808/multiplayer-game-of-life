@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { Game } from "./Game.js";
-import type { Color } from "./model/index.js";
+import type { Color } from "./types.js";
 
 describe("Game.placeCell", () => {
   it("returns true for a valid placement", () => {
