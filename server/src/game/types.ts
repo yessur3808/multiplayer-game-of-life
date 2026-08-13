@@ -6,4 +6,12 @@ export interface LiveCell {
   color: Color;
 }
 
+export interface GameSnapshot {
+  width: number;
+  height: number;
+  generation: number;
+  revision: number;
+  cells: LiveCell[];
+}
+
 export type Board = Map<number, Color>;
