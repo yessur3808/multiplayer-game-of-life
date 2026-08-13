@@ -9,6 +9,39 @@ owns the board, applies commands in arrival order, advances generations, and sho
 
 ![Multiplayer Conway's Game of Life screenshot](./game.png)
 
+## Quick Start
+
+1. Clone the repository and enter the project directory:
+
+   ```sh
+   git clone https://github.com/yessur3808/multiplayer-game-of-life.git
+   cd multiplayer-game-of-life
+   ```
+
+2. Confirm Docker is running:
+
+   ```sh
+   docker compose version
+   ```
+
+3. Build and start the complete application:
+
+   ```sh
+   make up
+   ```
+
+   If Make is unavailable, run `docker compose up --build` instead.
+
+4. Open `http://localhost:8080` in a browser. Open another browser or private
+   window to verify that both clients share the same board.
+
+5. Stop the application with `Ctrl+C`, then remove the containers and network:
+
+   ```sh
+   make down
+   ```
+
+Run the complete test, lint, and build suite at any time with `make check`.
 
 ## The problem
 
