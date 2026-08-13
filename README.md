@@ -289,7 +289,7 @@ Server to client:
 | Public-network protections are minimal. | There are no origin checks, rate limits, connection limits, or administrative controls. | Add abuse prevention before exposing the service directly to the internet. |
 | Operational visibility is limited. | There are no metrics, health endpoints, structured logs, or WebSocket heartbeats. | Add health/readiness routes, telemetry, heartbeat cleanup, and alerting. |
 | Protocol types are duplicated. | Client and server changes must be synchronized manually. | Generate both type surfaces from one shared schema. |
-| Deployment is split. | The server has a Docker image, while the client remains a separate static artifact. | Add a complete deployment definition for static hosting, proxying, TLS, and the game service. |
+| Deployment targets a single host. | Docker Compose builds the client and server images, serves the client through Nginx, and proxies WebSocket traffic to one stateful game-server instance. The setup does not provide TLS or coordinated horizontal scaling. | Add platform deployment configuration with managed TLS, health checks, persistent state, and coordination between game-server replicas. |
 
 The repository already includes parallel client and server CI jobs. New commits
 to the same pull request cancel obsolete runs.
