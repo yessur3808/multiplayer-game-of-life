@@ -48,3 +48,8 @@ export interface ErrorMessage {
 }
 
 export type ServerMessage = WelcomeMessage | SnapshotMessage | ErrorMessage;
+
+export const clientIdSchema = z
+  .string()
+  .uuid()
+  .max(64);

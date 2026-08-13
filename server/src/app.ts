@@ -1,8 +1,10 @@
 import { createServer, type Server } from "node:http";
+import type { IncomingMessage } from "node:http";
 import { WebSocket, WebSocketServer } from "ws";
 
 import { createPlayerColor } from "./game/colors.js";
 import { Game } from "./game/Game.js";
+import type { Color } from "./game/types.js";
 import { clientMsgSchema, type ServerMessage } from "./protocol.js";
 
 export interface AppOptions {
@@ -19,6 +21,25 @@ export interface App {
   close: () => Promise<void>;
 }
 
+const UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+const getClientId = (request: IncomingMessage): string | undefined => {
+  const url = new URL(request.url ?? "", "http://localhost");
+  const clientId = url.searchParams.get("clientId");
+
+  if (
+    clientId === null ||
+    clientId.length === 0 ||
+    clientId.length > 64 ||
+    !UUID_PATTERN.test(clientId)
+  ) {
+    return undefined;
+  }
+
+  return clientId;
+};
+
 export const createGameServer = ({
   width,
   height,
@@ -32,7 +53,16 @@ export const createGameServer = ({
     server,
     path: "/ws",
     maxPayload: 4 * 1024,
+    verifyClient: ({ req }, done) => {
+      if (getClientId(req) === undefined) {
+        done(false, 401, "A valid clientId UUID is required");
+        return;
+      }
+
+      done(true);
+    },
   });
+  const playerColors = new Map<string, Color>();
 
   const game = new Game(width, height, random);
 
@@ -56,8 +86,14 @@ export const createGameServer = ({
     }
   };
 
-  webSocketServer.on("connection", (socket) => {
-    const playerColor = createPlayerColor(random);
+  webSocketServer.on("connection", (socket, request) => {
+    const clientId = getClientId(request)!;
+    let playerColor = playerColors.get(clientId);
+
+    if (playerColor === undefined) {
+      playerColor = createPlayerColor(random);
+      playerColors.set(clientId, playerColor);
+    }
 
     send(socket, {
       type: "welcome",
