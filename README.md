@@ -68,6 +68,7 @@ server/                 Node.js WebSocket service
 ## Prerequisites
 
 - Docker with Docker Compose, for the recommended complete startup.
+- Make, for the optional shortcut commands.
 - Node.js 24 LTS and npm, only when running the client and server directly. Both `.nvmrc` and `.node-version` pin the expected Node major.
 
 ## Start the complete application with Docker
@@ -75,7 +76,7 @@ server/                 Node.js WebSocket service
 Build and start the client, reverse proxy, and game server from the repository root:
 
 ```sh
-docker compose up --build
+make up
 ```
 
 Open `http://localhost:8080`. The client container serves the React production build and proxies `/ws` to the server container over the internal Compose network. Only the client-facing port is published to the host.
@@ -83,8 +84,11 @@ Open `http://localhost:8080`. The client container serves the React production b
 Stop the application with `Ctrl+C`, or run this from another terminal when it was started in detached mode:
 
 ```sh
-docker compose down
+make down
 ```
+
+Run `make help` to list all Docker, test, lint, and build shortcuts. The
+underlying `docker compose` commands remain available if Make is not installed.
 
 Compose accepts the same game configuration through shell variables, plus `APP_PORT` for the browser-facing port:
 
@@ -158,12 +162,11 @@ Choose board dimensions with care. Each generation scans every coordinate, and e
 Run the complete local verification suite from the repository root:
 
 ```sh
-npm --prefix server test
-npm --prefix server run build
-npm --prefix client test
-npm --prefix client run lint
-npm --prefix client run build
+make check
 ```
+
+Run one package's tests independently with `make test-client` or
+`make test-server`. Use `make test` to run both suites without linting or builds.
 
 Server tests cover the Game of Life rules, color inheritance, pattern placement, board validation, WebSocket handshake, shared play/pause state, and reconnection identity. Client tests cover rendering and controls, message parsing, stale-revision handling, coordinate mapping, URL construction, cleanup, and reconnect backoff.
 
